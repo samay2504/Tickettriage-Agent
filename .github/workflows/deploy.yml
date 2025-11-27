@@ -1,0 +1,115 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - UI-and-retry-rate
+  pull_request:
+    branches:
+      - UI-and-retry-rate
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create static site structure
+        run: |
+          mkdir -p dist
+          cp -r web/ui/* dist/
+          cp -r web/static dist/
+          
+          # Create API documentation
+          mkdir -p dist/docs
+          cp README.md dist/docs/README.md
+          cp QUICKSTART.md dist/docs/QUICKSTART.md
+          
+          # Create deployment info
+          cat > dist/DEPLOYMENT.md << 'EOF'
+          # Ticket Triage Agent - Deployment Info
+          
+          ## Frontend
+          This is the frontend UI hosted on GitHub Pages.
+          
+          ## Backend API
+          To use the full triage system, the backend API must be running.
+          
+          ### Local Development
+          ```bash
+          cd ticket_triage
+          pip install -r requirements.txt
+          uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+          ```
+          
+          ### Docker Deployment
+          ```bash
+          docker-compose -f docker/docker-compose.yml up
+          ```
+          
+          ### Production Deployment
+          See PRODUCTION_CONSIDERATIONS.md for deployment guides.
+          
+          ## API Configuration
+          Update the API endpoint in the frontend by modifying:
+          - `web/static/js/main.js` - Update `API_ENDPOINT` variable
+          
+          Default: `/triage` (same host)
+          Production: `https://your-api-domain.com/triage`
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  build-backend-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run tests
+        run: |
+          cd ticket_triage
+          pip install -r requirements.txt
+          pytest tests/ -v --tb=short || true
+
+      - name: Generate coverage report
+        run: |
+          cd ticket_triage
+          pytest tests/ --cov=app --cov=agent --cov=kb --cov=cache --cov-report=html || true
+          mkdir -p dist/coverage
+          cp -r htmlcov/* dist/coverage/ || true
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: dist/coverage
