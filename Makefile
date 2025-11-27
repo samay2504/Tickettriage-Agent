@@ -54,6 +54,12 @@ clean:
 run:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
+server:
+	@echo "Starting Ticket Triage Agent Backend Server..."
+	@echo "Server: http://localhost:8000"
+	@echo "UI: http://localhost:8000/ui"
+	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
 docker-build:
 	docker-compose -f docker/docker-compose.yml build
 
