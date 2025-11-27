@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: ticket-triage-app
+    ports:
+      - "8000:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_DEBUG=false
+      - LLM_TEMPERATURE=0.1
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_ENABLED=true
+      - CACHE_TTL_SECONDS=3600
+      - KB_PATH=/app/kb/sample_kb.json
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-test-token}
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    depends_on:
+      - redis
+    networks:
+      - triage-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticket-triage-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - triage-network
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  triage-network:
+    driver: bridge

@@ -1,0 +1,392 @@
+version: "1.0"
+description: "Production-grade Support Ticket Triage Prompt Template"
+metadata:
+  author: "Support Automation Team"
+  created: "2025-11-27"
+  purpose: "Classify and triage customer support tickets with comprehensive edge case handling"
+  compliance: ["SOC2", "GDPR"]
+
+# System-level configuration for the triage agent
+system:
+  role: "Support Triage Assistant"
+  organization_context: "Customer Support Team"
+  response_format: "JSON"
+  validation_strict: true
+  error_handling: "fallback_to_unclassified"
+  
+# Input validation rules
+input_validation:
+  description:
+    min_length: 10
+    max_length: 5000
+    required: true
+    sanitization: "strip_whitespace"
+    null_handling: "reject"
+    empty_handling: "reject"
+    encoding: "utf-8"
+    
+  kb_matches:
+    max_items: 5
+    required: false
+    null_handling: "empty_list"
+    validation_schema: "must_have_id_title_score"
+    
+  config_summary:
+    required: true
+    null_handling: "use_defaults"
+
+# Classification schema with validation rules
+classification:
+  category:
+    valid_values: ["Bug", "Billing", "Login", "Performance", "Question", "Other"]
+    default: "Other"
+    required: true
+    mapping_rules:
+      - keywords: ["crash", "error", "broken", "not working", "fail", "exception"]
+        category: "Bug"
+      - keywords: ["charge", "payment", "invoice", "refund", "subscription", "card"]
+        category: "Billing"
+      - keywords: ["password", "login", "signin", "cannot access", "locked out", "2fa", "mfa"]
+        category: "Login"
+      - keywords: ["slow", "lag", "timeout", "hang", "freeze", "performance", "speed"]
+        category: "Performance"
+      - keywords: ["how", "what", "why", "?", "help", "guide", "tutorial"]
+        category: "Question"
+  
+  severity:
+    valid_values: ["Low", "Medium", "High", "Critical"]
+    default: "Low"
+    required: true
+    escalation_triggers:
+      - keywords: ["down", "urgent", "asap", "critical", "emergency", "broken"]
+        severity: "Critical"
+      - keywords: ["blocking", "cannot", "major", "serious", "important"]
+        severity: "High"
+      - keywords: ["issue", "problem", "bug"]
+        severity: "Medium"
+      - keywords: ["minor", "typo", "question"]
+        severity: "Low"
+    
+    frequency_boost:
+      # If KB matches indicate high frequency, boost severity
+      enabled: true
+      threshold: 3  # If same KB article matched 3+ times recently, boost severity
+
+# Edge case handlers
+edge_cases:
+  empty_description:
+    detection: "description length < 10"
+    action: "reject_with_error"
+    response_category: "Other"
+    response_severity: "Low"
+    suggested_action: "Request more detailed description from customer"
+    known_issue: false
+    
+  extremely_long_description:
+    detection: "description length > 5000"
+    action: "truncate_and_summarize"
+    max_tokens: 2000
+    summarization_method: "first_last_sentences"
+    
+  multiple_issues:
+    detection: "description contains multiple unrelated issues"
+    indicators:
+      - keyword_count: "> 3 different complaint types"
+      - has_multiple_question_marks: true
+      - has_multiple_exclamation_marks: true
+    action: "request_separate_tickets"
+    suggested_action: "Please submit separate tickets for each issue"
+    severity_boost: "Medium"
+    
+  urgent_indicators:
+    detection: "contains emergency keywords"
+    keywords: ["URGENT", "CRITICAL", "DOWN", "EMERGENCY", "SOS"]
+    action: "escalate_immediately"
+    severity_override: "Critical"
+    kb_search_boost: true
+    
+  spam_detection:
+    detection: "likely spam or test message"
+    indicators:
+      - repeated_characters: "> 10 consecutive same char"
+      - random_characters: "> 50% non-alphanumeric"
+      - only_links: "true"
+      - all_caps: "true"
+    action: "mark_as_spam"
+    suggested_action: "Route to spam detection system"
+    known_issue: false
+    
+  pii_detected:
+    detection: "contains personally identifiable information"
+    indicators:
+      - contains_email: true
+      - contains_phone: true
+      - contains_ssn: true
+      - contains_credit_card: true
+    action: "flag_for_review"
+    suggested_action: "Review and redact PII before processing"
+    security_level: "high"
+    
+  gibberish_or_corrupted:
+    detection: "text is unreadable or corrupted"
+    indicators:
+      - entropy_score: "> 7"
+      - non_word_ratio: "> 70%"
+      - unicode_corruption: true
+    action: "request_resubmission"
+    suggested_action: "Request customer to resubmit with clear description"
+    
+  language_mismatch:
+    detection: "description in non-English language"
+    action: "attempt_translation"
+    fallback_action: "route_to_multilingual_team"
+    
+  duplicate_detection:
+    detection: "ticket appears to be duplicate"
+    action: "check_kb_for_similar_issues"
+    similarity_threshold: 0.85
+    suggested_action: "Check existing tickets or KB articles"
+
+# KB matching and enhancement
+kb_matching:
+  enabled: true
+  max_results: 5
+  min_confidence: 0.3
+  result_formatting:
+    include_score: true
+    include_snippet: true
+    include_category: true
+    sort_by: "relevance"
+  
+  # If no KB matches found, suggest general troubleshooting
+  no_match_fallback:
+    action: "suggest_general_troubleshooting"
+    suggested_steps:
+      - "Clear browser cache and cookies"
+      - "Try a different browser or device"
+      - "Check internet connection"
+      - "Restart the application"
+      - "Contact support if issue persists"
+
+# Response structure and validation
+response_schema:
+  required_fields:
+    - summary
+    - category
+    - severity
+    - known_issue
+    - kb_ids
+    - suggested_action
+  
+  field_specifications:
+    summary:
+      type: "string"
+      min_length: 10
+      max_length: 200
+      description: "1-2 sentence concise ticket summary"
+      validation: "no_empty_strings"
+      
+    category:
+      type: "string"
+      enum: ["Bug", "Billing", "Login", "Performance", "Question", "Other"]
+      description: "Primary issue category"
+      validation: "must_be_valid_enum"
+      
+    severity:
+      type: "string"
+      enum: ["Low", "Medium", "High", "Critical"]
+      description: "Issue severity level"
+      validation: "must_be_valid_enum"
+      
+    known_issue:
+      type: "boolean"
+      description: "Whether this is a known issue"
+      validation: "must_be_boolean"
+      
+    kb_ids:
+      type: "array"
+      items_type: "string"
+      description: "Related KB article IDs"
+      max_items: 5
+      validation: "must_be_array_of_strings"
+      null_handling: "empty_array"
+      
+    suggested_action:
+      type: "string"
+      min_length: 10
+      max_length: 300
+      description: "Recommended next action for support team"
+      validation: "no_empty_strings"
+
+# Prompt template sections
+prompt_template:
+  preamble: |
+    You are a Support Triage assistant for a customer support team.
+    Your role is to classify and route customer support tickets efficiently and accurately.
+    
+    CRITICAL INSTRUCTIONS:
+    1. Output ONLY valid JSON. Do not include markdown, code blocks, or explanations.
+    2. Handle edge cases gracefully (see edge case guidelines below).
+    3. If uncertain about classification, use "Other" category and "Medium" severity.
+    4. Always provide actionable suggested_action for support team.
+    5. Reference KB articles only if confidence > 0.3.
+    
+  main_input: |
+    INPUT ANALYSIS:
+    
+    Customer Description:
+    {description}
+    
+    Matching Knowledge Base Articles (top results):
+    {kb_matches}
+    
+    System Configuration:
+    {config_summary}
+  
+  classification_guidelines: |
+    CLASSIFICATION GUIDELINES:
+    
+    Category Selection:
+    - Bug: System malfunction, error, crash, or failure
+    - Billing: Payment, subscription, invoice, or refund issues
+    - Login: Authentication, access, or credential problems
+    - Performance: Speed, latency, timeout, or responsiveness issues
+    - Question: Inquiry, how-to, or information request
+    - Other: Miscellaneous or unclear issues
+    
+    Severity Determination (with escalation rules):
+    - Critical: System down, urgent, blocking production, multiple users affected
+    - High: Significant feature broken, major functionality impaired, business impact
+    - Medium: Feature partially working, workaround available, single user affected
+    - Low: Minor issue, cosmetic, question, no functional impact
+    
+    Known Issue Detection:
+    - Check if description matches KB articles
+    - Set known_issue=true if confidence > 0.3
+    - Include matching KB article IDs
+    - If no KB match, set known_issue=false with empty kb_ids array
+  
+  edge_case_guidelines: |
+    EDGE CASE HANDLING:
+    
+    Empty or Very Short Description:
+    - Reject if < 10 characters
+    - Return: category="Other", severity="Low", suggested_action="Request more details"
+    
+    Multiple Issues (Multiple Problems in One Ticket):
+    - Detect if customer reports 3+ different issues
+    - Suggest splitting into separate tickets
+    - Classify primary issue, suggest_action: "Please submit separate tickets for each issue"
+    - Boost severity to at least "Medium"
+    
+    Urgent/Emergency Keywords (URGENT, CRITICAL, DOWN, SOS):
+    - Override severity to "Critical"
+    - Priority escalation recommended
+    - Suggested action: "Immediate escalation required"
+    
+    Extremely Long Description (> 5000 chars):
+    - Focus on first and last paragraphs
+    - Summarize to key points
+    - Proceed with classification using primary issue
+    
+    PII Detection (Email, Phone, SSN, Credit Card):
+    - Flag: suggested_action="Review and redact PII before processing"
+    - Continue classification
+    - Add security warning to metadata
+    
+    Spam/Gibberish Detection:
+    - Random repeated characters (>>>>>>>)
+    - Mostly non-alphanumeric content
+    - Unreadable text
+    - Action: suggested_action="Route to spam detection"
+    
+    Language Mismatch:
+    - Non-English content detected
+    - Attempt understanding where possible
+    - Suggested action: "Route to multilingual support team"
+    
+    Duplicate Ticket Indicators:
+    - Similar to recent KB articles or recent tickets
+    - Suggested action: "Check if issue already reported"
+  
+  fallback_strategy: |
+    FALLBACK STRATEGY (If Classification Uncertain):
+    
+    1. When unable to determine category → Use "Other"
+    2. When unable to determine severity → Use "Medium"
+    3. When no KB matches found → Use empty kb_ids array
+    4. When description is unclear → Suggest clarification request
+    5. When response parsing fails → Return basic valid JSON structure
+    
+    Always provide a suggested_action even in fallback scenarios.
+  
+  output_format: |
+    OUTPUT REQUIREMENTS:
+    
+    Return ONLY valid JSON (no markdown, no explanations, no code blocks):
+    
+    {
+      "summary": "<1-2 sentence summary of ticket>",
+      "category": "<one of: Bug, Billing, Login, Performance, Question, Other>",
+      "severity": "<one of: Low, Medium, High, Critical>",
+      "known_issue": <true or false>,
+      "kb_ids": ["<id1>", "<id2>"],
+      "suggested_action": "<clear next action for support team>"
+    }
+    
+    Validation:
+    - summary: 10-200 characters, no empty strings
+    - category: Must match enum exactly
+    - severity: Must match enum exactly
+    - known_issue: true or false only
+    - kb_ids: Array of strings (can be empty)
+    - suggested_action: 10-300 characters, actionable
+
+# Logging and monitoring
+monitoring:
+  log_level: "INFO"
+  metrics_to_track:
+    - classification_accuracy
+    - category_distribution
+    - severity_escalation_rate
+    - kb_match_success_rate
+    - fallback_usage_rate
+    - edge_case_trigger_rate
+  
+  audit_trail:
+    enabled: true
+    log_fields:
+      - timestamp
+      - request_id
+      - description_length
+      - category
+      - severity
+      - kb_match_count
+      - edge_case_triggered
+      - processing_time_ms
+      - confidence_score
+
+# Production deployment checklist
+production_readiness:
+  security_checks:
+    - pii_detection: true
+    - input_sanitization: true
+    - output_validation: true
+    - rate_limiting: true
+    - auth_required: true
+  
+  performance_targets:
+    max_latency_ms: 2000
+    p99_latency_ms: 1500
+    throughput_per_second: 100
+    
+  reliability:
+    fallback_enabled: true
+    circuit_breaker: true
+    retry_attempts: 3
+    timeout_seconds: 5
+  
+  monitoring:
+    error_rate_threshold: 0.01  # Alert if > 1% errors
+    latency_p99_threshold: 2000  # Alert if p99 > 2s
+    fallback_rate_threshold: 0.1  # Alert if fallback used > 10%

@@ -1,0 +1,137 @@
+[
+  {
+    "id": "ISSUE-101",
+    "title": "Checkout error 500 on mobile",
+    "category": "Bug",
+    "symptoms": ["500 error", "mobile", "checkout", "payment failed"],
+    "snippet": "Users report 500 errors when completing purchase on mobile devices.",
+    "full_text": "When users attempt to complete a purchase on mobile devices (iOS/Android), they encounter a 500 Internal Server Error. The error typically occurs after entering payment information.",
+    "recommended_action": "Escalate to payments team; reference incident INC-2023-09-10"
+  },
+  {
+    "id": "ISSUE-102",
+    "title": "Password reset email not received",
+    "category": "Login",
+    "symptoms": ["password reset", "email not received", "auth", "cannot reset password"],
+    "snippet": "Users report not receiving password reset emails.",
+    "full_text": "Password reset emails are not being delivered to users' inboxes. Users can request the reset but never receive the email link.",
+    "recommended_action": "Check email delivery provider logs; verify email service configuration; resend email"
+  },
+  {
+    "id": "ISSUE-103",
+    "title": "Slow page load times",
+    "category": "Performance",
+    "symptoms": ["slow", "loading", "performance", "lag", "timeout"],
+    "snippet": "Dashboard takes 10+ seconds to load.",
+    "full_text": "The dashboard and reporting pages are experiencing slow load times, taking 10-30 seconds to render. This affects user experience significantly.",
+    "recommended_action": "Check CDN status; review database query performance; analyze frontend bundle size"
+  },
+  {
+    "id": "ISSUE-104",
+    "title": "API rate limiting blocking legitimate requests",
+    "category": "Bug",
+    "symptoms": ["rate limit", "429", "too many requests", "API", "throttling"],
+    "snippet": "Customers hitting 429 errors on legitimate API requests.",
+    "full_text": "Some customers are experiencing 429 Too Many Requests errors even with normal usage patterns. This suggests rate limit configuration may be too aggressive.",
+    "recommended_action": "Review API rate limit settings; check for burst traffic; whitelist high-volume legitimate users"
+  },
+  {
+    "id": "ISSUE-105",
+    "title": "Missing fields in API response",
+    "category": "Bug",
+    "symptoms": ["API", "missing field", "response", "JSON", "incomplete"],
+    "snippet": "API responses missing expected fields in certain conditions.",
+    "full_text": "When querying specific endpoints with certain parameters, API responses are missing expected fields or returning null values unexpectedly.",
+    "recommended_action": "Verify API schema version; check for recent deployments; ask for API endpoint and parameters used"
+  },
+  {
+    "id": "ISSUE-106",
+    "title": "Two-factor authentication not working",
+    "category": "Login",
+    "symptoms": ["2FA", "two-factor", "MFA", "authentication", "code not accepted"],
+    "snippet": "2FA setup or authentication codes not working.",
+    "full_text": "Users report that 2FA is not functioning: either setup fails or authentication codes are not accepted. May affect specific authenticator apps.",
+    "recommended_action": "Check time sync on user device; verify authenticator app; test with different TOTP app; check server time drift"
+  },
+  {
+    "id": "ISSUE-107",
+    "title": "Billing issue: duplicate charges",
+    "category": "Billing",
+    "symptoms": ["billing", "duplicate", "charge", "double charge", "payment"],
+    "snippet": "Customers reporting duplicate charges on their account.",
+    "full_text": "Several customers report being charged multiple times for a single transaction or subscription period.",
+    "recommended_action": "Pull transaction logs; verify idempotency keys; escalate to finance team; prepare refund"
+  },
+  {
+    "id": "ISSUE-108",
+    "title": "Cannot export data to CSV",
+    "category": "Bug",
+    "symptoms": ["export", "CSV", "download", "report", "fail"],
+    "snippet": "CSV export feature not working.",
+    "full_text": "Users attempting to export data or reports to CSV format experience failures or receive empty/corrupted files.",
+    "recommended_action": "Check disk space; verify export service logs; test with smaller datasets; ask for number of records being exported"
+  },
+  {
+    "id": "ISSUE-109",
+    "title": "Database connection timeout",
+    "category": "Bug",
+    "symptoms": ["database", "timeout", "connection", "DB", "error"],
+    "snippet": "Database operations timing out during peak hours.",
+    "full_text": "Database connection timeouts occurring during business hours. Connection pool may be exhausted or network latency increased.",
+    "recommended_action": "Check database server load; verify connection pool settings; review query performance; check network latency"
+  },
+  {
+    "id": "ISSUE-110",
+    "title": "Memory leak in background worker",
+    "category": "Performance",
+    "symptoms": ["memory", "leak", "worker", "process", "high memory"],
+    "snippet": "Background worker process consuming increasing memory.",
+    "full_text": "The background job worker process is consuming increasing amounts of memory over time, eventually causing restarts.",
+    "recommended_action": "Profile application memory; check for unbounded caches; review job queue implementation; restart service"
+  },
+  {
+    "id": "ISSUE-111",
+    "title": "Notification emails not sending",
+    "category": "Bug",
+    "symptoms": ["notification", "email", "alert", "not received", "alert"],
+    "snippet": "Users not receiving notification/alert emails.",
+    "full_text": "System notifications and alert emails are not being sent to users. Affects alerts for security events and important updates.",
+    "recommended_action": "Check email queue; verify email service configuration; review SMTP logs; resend notifications"
+  },
+  {
+    "id": "ISSUE-112",
+    "title": "Dashboard refresh not updating data",
+    "category": "Bug",
+    "symptoms": ["refresh", "update", "data not updating", "stale", "cache issue"],
+    "snippet": "Dashboard shows stale data even after refresh.",
+    "full_text": "When users refresh the dashboard, data does not update and shows stale information. Cache may not be invalidating correctly.",
+    "recommended_action": "Clear browser cache; check cache invalidation logic; verify WebSocket connections; ask for specific metrics affected"
+  },
+  {
+    "id": "ISSUE-113",
+    "title": "How to integrate with third-party service",
+    "category": "Question",
+    "symptoms": ["integration", "third-party", "API", "how to", "setup"],
+    "snippet": "User asking how to set up integration with external service.",
+    "full_text": "User needs guidance on integrating our platform with a third-party service or tool.",
+    "recommended_action": "Provide integration documentation link; offer API key generation assistance; schedule integration walkthrough"
+  },
+  {
+    "id": "ISSUE-114",
+    "title": "Unable to delete account",
+    "category": "Other",
+    "symptoms": ["delete", "account", "close", "terminate", "remove"],
+    "snippet": "User cannot delete their account.",
+    "full_text": "Account deletion feature is not working or account cannot be fully removed from system.",
+    "recommended_action": "Check account deletion workflow; verify no dependent resources; escalate to data team; confirm compliance"
+  },
+  {
+    "id": "ISSUE-115",
+    "title": "Configuration error in deployment",
+    "category": "Question",
+    "symptoms": ["configuration", "deploy", "setup", "config", "how"],
+    "snippet": "User asking about correct configuration for deployment.",
+    "full_text": "User has questions about configuration options or settings for deploying in their environment.",
+    "recommended_action": "Provide deployment documentation; share configuration template; offer setup consultation"
+  }
+]
