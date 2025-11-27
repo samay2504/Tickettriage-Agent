@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Ticket Triage Agent</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Ticket Triage Agent</h1>
+            <p class="subtitle">AI-powered support ticket classification and routing</p>
+        </div>
+
+        <!-- Main Panel -->
+        <div class="panel">
+            <!-- Input Section -->
+            <div class="section">
+                <h2>Describe Your Issue</h2>
+                <div class="form-group">
+                    <label for="description">Ticket Description</label>
+                    <textarea
+                        id="description"
+                        class="textarea"
+                        placeholder="Describe your support issue in detail..."
+                        aria-label="Ticket description"
+                        aria-describedby="char-count"
+                    ></textarea>
+                    <div class="char-counter">
+                        <span id="char-count">0</span> / <span id="max-chars">5000</span> characters
+                    </div>
+                    <div id="validation-message" class="validation-message"></div>
+                </div>
+
+                <!-- Submit Button -->
+                <button id="submit-btn" class="button button-primary" aria-label="Submit ticket for triage">
+                    <span id="button-text">Submit Ticket</span>
+                    <span id="loading-spinner" class="spinner" style="display: none;" aria-hidden="true"></span>
+                </button>
+            </div>
+
+            <!-- Results Section (Hidden by Default) -->
+            <div id="results-section" class="section" style="display: none;">
+                <div class="results-header">
+                    <h2>Triage Results</h2>
+                    <div class="result-actions">
+                        <button id="copy-json-btn" class="button button-secondary" title="Copy JSON to clipboard">
+                            📋 Copy JSON
+                        </button>
+                        <button id="edit-btn" class="button button-secondary" title="Edit and resubmit">
+                            ✏️ Edit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="result-card">
+                    <div class="card-header">
+                        <h3>Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <p id="result-summary" class="summary-text"></p>
+                    </div>
+                </div>
+
+                <!-- Classification Card -->
+                <div class="result-card">
+                    <div class="card-header">
+                        <h3>Classification</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="classification-grid">
+                            <div class="classification-item">
+                                <strong>Category:</strong>
+                                <span id="result-category" class="category-badge"></span>
+                            </div>
+                            <div class="classification-item">
+                                <strong>Severity:</strong>
+                                <span id="result-severity" class="severity-badge"></span>
+                            </div>
+                            <div class="classification-item">
+                                <strong>Known Issue:</strong>
+                                <span id="result-known-issue"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suggested Action Card -->
+                <div class="result-card">
+                    <div class="card-header">
+                        <h3>Suggested Action</h3>
+                    </div>
+                    <div class="card-body">
+                        <p id="result-action" class="action-text"></p>
+                    </div>
+                </div>
+
+                <!-- KB Matches Card -->
+                <div id="kb-matches-card" class="result-card" style="display: none;">
+                    <div class="card-header">
+                        <h3>Related Knowledge Base Entries</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="kb-matches-list" class="kb-list"></div>
+                    </div>
+                </div>
+
+                <!-- Metadata Card -->
+                <div class="result-card metadata-card">
+                    <div class="card-header">
+                        <h3>Metadata</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metadata-grid">
+                            <div class="metadata-item">
+                                <strong>Provider:</strong>
+                                <span id="result-provider" class="meta-value"></span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Latency:</strong>
+                                <span id="result-latency" class="meta-value"></span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Cache Hit:</strong>
+                                <span id="result-cache-hit" class="meta-value"></span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Retry Used:</strong>
+                                <span id="result-retry-used" class="meta-value"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Raw JSON (Expandable) -->
+                <details class="json-details">
+                    <summary>View Raw JSON</summary>
+                    <pre id="result-json" class="json-output"></pre>
+                </details>
+            </div>
+
+            <!-- Error Section (Hidden by Default) -->
+            <div id="error-section" class="section" style="display: none;">
+                <div class="error-card">
+                    <h3>⚠️ Error</h3>
+                    <p id="error-message" class="error-text"></p>
+                    <p id="error-details" class="error-details"></p>
+                    <button id="retry-btn" class="button button-primary">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Support Ticket Triage Agent &bull; Powered by AI &bull; <a href="/health" target="_blank">Health Check</a></p>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

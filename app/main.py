@@ -13,12 +13,15 @@ try:
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
+    from fastapi.staticfiles import StaticFiles
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
 
 from config.settings import get_settings
 from app.routes import triage as triage_routes
+from app.routes import ui as ui_routes
+from app.middleware.rate_limit import create_rate_limiter, RateLimitConfig
 from cache.redis_client import close_redis_client
 
 # Configure logging
@@ -121,9 +124,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for UI (CSS, JS)
+from pathlib import Path
+web_static_path = Path(__file__).parent.parent / "web" / "static"
+if web_static_path.exists():
+    app.mount("/static", StaticFiles(directory=str(web_static_path)), name="static")
+
 
 # Include routes
 app.include_router(triage_routes.router, prefix="", tags=["triage"])
+app.include_router(ui_routes.router, prefix="", tags=["ui"])
 
 
 # Root endpoint

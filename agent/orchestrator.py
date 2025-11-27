@@ -62,9 +62,17 @@ class TicketTriageOrchestrator:
         self.kb_loader = KBLoader(settings.kb_path)
         self.kb_search = KBSearch(self.kb_loader.get_entries(), settings.kb_embedding_model)
         self.redis_client = RedisClient(settings.redis_url, settings.cache_enabled)
+        
+        # Get provider preference list
+        if hasattr(settings, 'get_provider_preference_list'):
+            provider_list = settings.get_provider_preference_list()
+        else:
+            # Fallback for dataclass Settings
+            provider_list = settings.provider_preference if isinstance(settings.provider_preference, list) else settings.provider_preference.split(',')
+        
         self.llm_client = create_llm_client({
             "temperature": settings.llm_temperature,
-            "provider_preference": settings.provider_preference,
+            "provider_preference": provider_list,
         })
         self.prompt_loader = PromptLoader(settings.prompts_dir)
     

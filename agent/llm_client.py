@@ -1,23 +1,27 @@
 """
 LLM client wrapper around llm_provider.create_llm_provider.
 Implements retries, backoff, and standardized invoke interface.
+Supports configurable retry behavior via environment variables.
 """
 
 import logging
 import json
 import time
 from typing import Optional, Dict, Any
-from tenacity import retry, stop_after_attempt, wait_exponential
+
+from agent.retry import retry_on_transient, RetryConfig
 
 logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """Wrapper around LLM provider with retry and error handling."""
+    """Wrapper around LLM provider with configurable retry and error handling."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.provider = None
+        self.retry_config = RetryConfig.from_env()
+        logger.info(f"Retry config: enabled={self.retry_config.enabled}, max_retries={self.retry_config.max_retries}")
         self.initialize_provider()
     
     def initialize_provider(self):
@@ -58,18 +62,13 @@ class LLMClient:
         
         return FallbackProvider()
     
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        reraise=True
-    )
-    def invoke(self, prompt: str, **kwargs) -> Optional[str]:
+    @retry_on_transient()
+    def _invoke_with_retry(self, prompt: str) -> Optional[str]:
         """
-        Invoke the LLM with retry logic.
+        Internal invoke method with retry logic.
         
         Args:
             prompt: The prompt to send to LLM
-            **kwargs: Additional parameters
         
         Returns:
             LLM response as string or None if failed
@@ -77,34 +76,53 @@ class LLMClient:
         if not self.provider:
             return None
         
-        try:
-            response = self.provider.invoke(prompt)
-            
-            # Handle different response formats
-            if response is None:
-                logger.warning("LLM returned None")
-                return None
-            
-            if isinstance(response, dict):
-                if 'content' in response:
-                    return response['content']
-                elif 'text' in response:
-                    return response['text']
-                else:
-                    return json.dumps(response)
-            elif isinstance(response, str):
-                return response
-            else:
-                # Try to get content attribute
-                if hasattr(response, 'content'):
-                    return response.content
-                elif hasattr(response, 'text'):
-                    return response.text
-                else:
-                    return str(response)
+        response = self.provider.invoke(prompt)
         
+        # Handle different response formats
+        if response is None:
+            logger.warning("LLM returned None")
+            return None
+        
+        if isinstance(response, dict):
+            if 'content' in response:
+                return response['content']
+            elif 'text' in response:
+                return response['text']
+            else:
+                return json.dumps(response)
+        elif isinstance(response, str):
+            return response
+        else:
+            # Try to get content attribute
+            if hasattr(response, 'content'):
+                return response.content
+            elif hasattr(response, 'text'):
+                return response.text
+            else:
+                return str(response)
+
+    def invoke(self, prompt: str, **kwargs) -> Optional[str]:
+        """
+        Invoke the LLM with configurable retry logic.
+        
+        Args:
+            prompt: The prompt to send to LLM
+            **kwargs: Additional parameters
+        
+        Returns:
+            LLM response as string or None if failed
+        
+        Raises:
+            Exception: If all retry attempts fail and retries are enabled
+        """
+        try:
+            result = self._invoke_with_retry(prompt)
+            return result
         except Exception as e:
-            logger.error(f"LLM invocation failed: {e}")
+            logger.error(
+                f"LLM invocation failed after {self.retry_config.max_retries} retries: {type(e).__name__}: {str(e)}"
+            )
+            # Re-raise to let orchestrator handle fallback
             raise
     
     def get_provider_name(self) -> str:

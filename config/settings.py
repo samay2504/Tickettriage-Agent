@@ -70,14 +70,27 @@ if not PYDANTIC_AVAILABLE:
         prompts_dir: str = "prompts"
         triage_prompt_file: str = "prompts/triage_prompt.txt"
         
-        # Security
+        # Security & Rate Limiting
         admin_token: Optional[str] = None
         rate_limit_enabled: bool = True
-        rate_limit_requests_per_minute: int = 60
+        rate_limit_requests: int = 60
+        rate_limit_period_seconds: int = 60
+        rate_limit_storage: str = "redis"
+        rate_limit_bypass_keys: str = ""
+        
+        # LLM Retry Configuration
+        llm_retry_enabled: bool = True
+        llm_retry_initial_delay_sec: float = 0.5
+        llm_retry_max_delay_sec: float = 8.0
+        llm_retry_backoff_multiplier: float = 2.0
+        
+        # Frontend
+        frontend_enabled: bool = True
+        frontend_port: Optional[int] = None
         
         # Logging
         log_level: str = "INFO"
-        log_format: str = "json"  # json or plain
+        log_format: str = "json"
         sentry_dsn: Optional[str] = None
         
         # Validation
@@ -111,7 +124,16 @@ if not PYDANTIC_AVAILABLE:
                 triage_prompt_file=os.getenv("TRIAGE_PROMPT_FILE", "prompts/triage_prompt.txt"),
                 admin_token=os.getenv("ADMIN_TOKEN"),
                 rate_limit_enabled=os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true",
-                rate_limit_requests_per_minute=int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "60")),
+                rate_limit_requests=int(os.getenv("RATE_LIMIT_REQUESTS", "60")),
+                rate_limit_period_seconds=int(os.getenv("RATE_LIMIT_PERIOD_SECONDS", "60")),
+                rate_limit_storage=os.getenv("RATE_LIMIT_STORAGE", "redis"),
+                rate_limit_bypass_keys=os.getenv("RATE_LIMIT_BYPASS_KEYS", ""),
+                llm_retry_enabled=os.getenv("LLM_RETRY_ENABLED", "true").lower() == "true",
+                llm_retry_initial_delay_sec=float(os.getenv("LLM_RETRY_INITIAL_DELAY_SEC", "0.5")),
+                llm_retry_max_delay_sec=float(os.getenv("LLM_RETRY_MAX_DELAY_SEC", "8.0")),
+                llm_retry_backoff_multiplier=float(os.getenv("LLM_RETRY_BACKOFF_MULTIPLIER", "2.0")),
+                frontend_enabled=os.getenv("FRONTEND_ENABLED", "true").lower() == "true",
+                frontend_port=int(os.getenv("FRONTEND_PORT")) if os.getenv("FRONTEND_PORT") else None,
                 log_level=os.getenv("LOG_LEVEL", "INFO"),
                 log_format=os.getenv("LOG_FORMAT", "json"),
                 sentry_dsn=os.getenv("SENTRY_DSN"),
@@ -121,6 +143,8 @@ if not PYDANTIC_AVAILABLE:
 
 else:
     # Use pydantic BaseSettings
+    from pydantic import field_validator
+    
     class Settings(PydanticSettings):
         """Settings using Pydantic BaseSettings."""
         # FastAPI
@@ -134,9 +158,7 @@ else:
         llm_timeout_seconds: int = 30
         llm_max_retries: int = 3
         llm_retry_backoff_factor: float = 2.0
-        provider_preference: List[str] = [
-            "google_genai", "groq", "huggingface", "openai", "fallback"
-        ]
+        provider_preference: str = "google_genai,groq,huggingface,openai,fallback"
         
         # API Keys (all optional)
         openai_api_key: Optional[str] = None
@@ -158,14 +180,27 @@ else:
         prompts_dir: str = "prompts"
         triage_prompt_file: str = "prompts/triage_prompt.txt"
         
-        # Security
+        # Security & Rate Limiting
         admin_token: Optional[str] = None
         rate_limit_enabled: bool = True
-        rate_limit_requests_per_minute: int = 60
+        rate_limit_requests: int = 60
+        rate_limit_period_seconds: int = 60
+        rate_limit_storage: str = "redis"
+        rate_limit_bypass_keys: str = ""
+        
+        # LLM Retry Configuration
+        llm_retry_enabled: bool = True
+        llm_retry_initial_delay_sec: float = 0.5
+        llm_retry_max_delay_sec: float = 8.0
+        llm_retry_backoff_multiplier: float = 2.0
+        
+        # Frontend
+        frontend_enabled: bool = True
+        frontend_port: Optional[int] = None
         
         # Logging
         log_level: str = "INFO"
-        log_format: str = "json"  # json or plain
+        log_format: str = "json"
         sentry_dsn: Optional[str] = None
         
         # Validation
@@ -174,6 +209,10 @@ else:
         
         if PYDANTIC_AVAILABLE:
             model_config = ConfigDict(env_file=".env", extra="ignore")
+        
+        def get_provider_preference_list(self) -> List[str]:
+            """Get provider preference as a list."""
+            return [p.strip() for p in self.provider_preference.split(",")]
 
 
 # Global settings singleton
