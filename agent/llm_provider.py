@@ -150,15 +150,16 @@ class LLMProvider:
                 elif "not set" in error_msg.lower():
                     print_status(f"{provider_name} API key not configured", "warning")
                 elif "not available" in error_msg.lower():
-                    print_status(f"{provider_name} package not installed", "warning")
+                    # Silently skip unavailable packages (e.g., optional Google Gemini)
+                    logger.debug(f"{provider_name} package not installed (expected)")
                 elif "all" in error_msg.lower() and "failed" in error_msg.lower():
                     print_status(f"{provider_name} models unavailable", "warning")
                 elif "token" in error_msg.lower() and "permissions" in error_msg.lower():
                     print_status(f"{provider_name} token lacks permissions", "warning")
                 else:
-                    print_status(f"{provider_name} initialization failed", "error")
+                    logger.debug(f"{provider_name} initialization skipped")
                 
-                logger.warning(f"{provider_name} failed: {e}")
+                logger.debug(f"{provider_name} failed: {e}")
                 continue
         
         # If all providers fail, create fallback

@@ -29,9 +29,9 @@ class RedisClient:
             self.client = redis.from_url(self.redis_url, decode_responses=True)
             # Test connection
             self.client.ping()
-            logger.info(f"Connected to Redis: {self.redis_url}")
+            logger.info(f"✅ Connected to Redis: {self.redis_url}")
         except Exception as e:
-            logger.error(f"Failed to connect to Redis: {e}")
+            logger.warning(f"⚠️ Redis cache unavailable (in-memory fallback): {type(e).__name__}")
             self.client = None
             self.enabled = False
     
