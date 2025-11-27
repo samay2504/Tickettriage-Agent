@@ -146,9 +146,29 @@ async def root():
         "endpoints": {
             "health": "/health",
             "triage": "/triage",
+            "ui": "/ui",
             "cache": "/cache/purge"
         }
     }
+
+
+# Health check endpoint
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": "Support Ticket Triage Agent",
+        "version": "1.0.0"
+    }
+
+
+# Favicon endpoint to prevent 404 errors
+@app.get("/favicon.ico")
+async def favicon():
+    """Favicon endpoint - returns 204 No Content."""
+    from fastapi.responses import Response
+    return Response(status_code=204)
 
 
 # Error handlers

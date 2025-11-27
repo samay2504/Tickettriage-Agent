@@ -212,6 +212,8 @@ else:
         
         def get_provider_preference_list(self) -> List[str]:
             """Get provider preference as a list."""
+            if isinstance(self.provider_preference, list):
+                return self.provider_preference
             return [p.strip() for p in self.provider_preference.split(",")]
 
 
