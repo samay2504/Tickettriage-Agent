@@ -21,7 +21,26 @@ An intelligent support ticket classification and routing system that uses LLM an
 - Redis (optional, for caching)
 - Docker (optional, for containerized deployment)
 
-### Local Development (macOS/Linux/Windows)
+### Local Development - Easiest Method
+
+**Windows**: Just double-click `run-server.bat` in the project folder!
+
+**Mac/Linux**:
+```bash
+bash run-server.sh
+```
+
+**Python** (All platforms):
+```bash
+python start_server.py
+```
+
+**Using Make** (if installed):
+```bash
+make server
+```
+
+### Manual Setup
 
 1. **Clone and setup**:
    ```bash
@@ -40,7 +59,12 @@ An intelligent support ticket classification and routing system that uses LLM an
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-4. **Test the API**:
+4. **Access the app**:
+   - Web UI: http://localhost:8000/ui
+   - API Docs: http://localhost:8000/docs
+   - Health Check: http://localhost:8000/health
+
+5. **Test the API**:
    ```bash
    curl -X POST http://localhost:8000/triage \
      -H "Content-Type: application/json" \
@@ -49,7 +73,7 @@ An intelligent support ticket classification and routing system that uses LLM an
 
 ### Docker Deployment
 
-1. **Using Docker Compose**:
+1. **Using Docker Compose** (recommended):
    ```bash
    docker-compose -f docker/docker-compose.yml up
    ```
@@ -59,6 +83,39 @@ An intelligent support ticket classification and routing system that uses LLM an
    docker build -f docker/Dockerfile -t ticket-triage:latest .
    docker run -p 8000:8000 -e REDIS_URL=redis://host.docker.internal:6379/0 ticket-triage:latest
    ```
+
+3. **Access the app**:
+   - Web UI: http://localhost:8000/ui
+   - API Docs: http://localhost:8000/docs
+
+## Web User Interface
+
+The system includes a modern, responsive web UI for ticket triage.
+
+**Access**: http://localhost:8000/ui
+
+**Features**:
+- Clean, intuitive interface with glassmorphism design
+- Real-time ticket classification
+- Severity assessment display
+- Related KB matches
+- JSON response viewer
+- Responsive design (works on desktop, tablet, mobile)
+
+## Server Startup Options
+
+For convenience, multiple startup methods are available:
+
+| Method | Command | Platform |
+|--------|---------|----------|
+| **Easiest** | Double-click `run-server.bat` | Windows |
+| **PowerShell** | `.\run-server.ps1` | Windows |
+| **Python** | `python start_server.py` | All |
+| **Bash** | `bash run-server.sh` | Mac/Linux |
+| **Make** | `make server` | All |
+| **Manual** | `uvicorn app.main:app --reload` | All |
+
+All methods start the server at **http://localhost:8000**
 
 ## API Endpoints
 
