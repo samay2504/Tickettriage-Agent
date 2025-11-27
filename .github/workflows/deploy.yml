@@ -34,7 +34,11 @@ jobs:
       - name: Create static site structure
         run: |
           mkdir -p dist
-          cp -r web/ui/* dist/
+          # Copy landing page (main index)
+          cp web/index.html dist/
+          # Copy UI app
+          mkdir -p dist/ui
+          cp -r web/ui/* dist/ui/
           cp -r web/static dist/
           
           # Create API documentation
